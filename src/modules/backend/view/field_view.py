@@ -777,6 +777,11 @@ class FieldView():
             self.section_table_manager.updateSection(self.section)
         self.mainwindow.seriesModified(True)
         self.generateView(generate_traces=False)
+
+    def changeChannel(self, change, direction):
+        """Change the displayed channel."""
+        self.section_layer.changeChannel(change, direction)
+        self.generateView(generate_image=True)
     
     def changeTform(self, new_tform):
         # check for section locked status

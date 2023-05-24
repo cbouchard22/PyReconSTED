@@ -72,6 +72,10 @@ class MousePalette():
         # create brightness/contrast buttons
         self.bcsize = 30
         self.createBCButtons()
+
+        # create channel buttons
+        self.chsize = 30
+        self.createCHButtons()
     
     def toggleHandedness(self):
         """Toggle the position of the buttons."""
@@ -320,7 +324,7 @@ class MousePalette():
                 b.setIcon(QIcon(pixmap))
                 b.setIconSize(QSize(self.bcsize*2/3, self.bcsize*2/3))
                 # connect to mainwindow function
-                b.pressed.connect(lambda o=option, d=direction: self.mainwindow.editImage(o, d))
+                b.pressed.connect(lambda o=option, d=direction: self.mainwindow.editImage(o, d, 0))
                 # set the button tool tip
                 if option == "contrast" and direction == "down":
                     tooltip = "Decrease contrast ([)"
@@ -338,6 +342,46 @@ class MousePalette():
                 self.bc_buttons.append(b)
                 self.corner_buttons.append(b)
         self.placeBCButtons()
+
+    def placeCHButtons(self):
+        """Place the channel buttons."""
+        for i, b in enumerate(self.ch_buttons):
+            grid_position = (i//4, i%4)
+            if self.left_handed:
+                x = self.mainwindow.field.x() + 10 + (self.chsize + 10) * grid_position[0]
+            else:
+                x = self.mainwindow.width() - (50 + self.chsize)
+                x += (self.chsize + 10) * grid_position[0]
+            y = self.mainwindow.height() - 300 - (20 + self.chsize) * grid_position[1]
+            b.setGeometry(x, y, self.chsize, self.chsize)
+
+    def createCHButtons(self):
+        self.ch_buttons = []
+        for c in range(8): # will need to be image dependant, not fixed at 4
+            b = ScreenButton(self.mainwindow)
+            # get the icons (for now, use the contrast icon)
+            direction = "inc" if c//4 else "dec"
+            icon_fp = os.path.join(loc.img_dir, f'channel_{c%4}_{direction}.png')
+            pixmap = QPixmap(icon_fp)
+            b.setIcon(QIcon(pixmap))
+            b.setIconSize(QSize(self.bcsize*2/3, self.bcsize*2/3))
+            # connect to mainwindow function
+            # get direction
+            d = "up" if c//4 else "down"
+            b.pressed.connect(lambda o='channel', d=d, c=c%4: self.mainwindow.editImage(o, d, c))
+            # set the button tool tip
+            if d == "up":
+                tooltip = f"Increase channel {c%4}"
+            else:
+                tooltip = f"Decrease channel {c%4}"
+            b.setToolTip(tooltip)
+            # set button as continuous
+            b.setAutoRepeat(True)
+            b.setAutoRepeatDelay(0)
+            b.show()
+            self.ch_buttons.append(b)
+            self.corner_buttons.append(b)
+        self.placeCHButtons()
     
     def toggleCornerButtons(self):
         """Toggle whether the corner buttons are shown."""
@@ -360,6 +404,7 @@ class MousePalette():
         self.placeLabel()
         self.placeIncrementButtons()
         self.placeBCButtons()
+        self.placeCHButtons()
     
     def reset(self, palette_traces : list, selected_trace : Trace):
         """Reset the mouse palette when opening a new series.

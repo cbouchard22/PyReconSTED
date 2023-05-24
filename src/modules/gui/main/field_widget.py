@@ -230,7 +230,7 @@ class FieldWidget(QWidget, FieldView):
         
         self.setView(new_mag)
     
-    def generateView(self, generate_image=True, generate_traces=True, update=True):
+    def generateView(self, generate_image=True, generate_traces=True, update=True, channel=0):
         """Generate the output view.
         
             Params:

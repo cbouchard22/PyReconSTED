@@ -137,10 +137,10 @@ class MainWindow(QMainWindow):
                     ("paste_act", "Paste", "Ctrl+V", self.field.paste),
                     ("pasteattributes_act", "Paste attributes", "Ctrl+B", self.field.pasteAttributes),
                     None,
-                    ("incbr_act", "Increase brightness", "=", lambda : self.editImage(option="brightness", direction="up")),
-                    ("decbr_act", "Decrease brightness", "-", lambda : self.editImage(option="brightness", direction="down")),
-                    ("inccon_act", "Increase contrast", "]", lambda : self.editImage(option="contrast", direction="up")),
-                    ("deccon_act", "Decrease contrast", "[", lambda : self.editImage(option="contrast", direction="down"))
+                    ("incbr_act", "Increase brightness", "=", lambda : self.editImage(option="brightness", direction="up", channel=0)),
+                    ("decbr_act", "Decrease brightness", "-", lambda : self.editImage(option="brightness", direction="down", channel=0)),
+                    ("inccon_act", "Increase contrast", "]", lambda : self.editImage(option="contrast", direction="up", channel=0)),
+                    ("deccon_act", "Decrease contrast", "[", lambda : self.editImage(option="contrast", direction="down", channel=0))
                 ]
             },
 
@@ -772,7 +772,7 @@ class MainWindow(QMainWindow):
         if self.field.ztrace_table_manager:
             self.field.ztrace_table_manager.refresh()
     
-    def editImage(self, option : str, direction : str):
+    def editImage(self, option : str, direction : str, channel : int):
         """Edit the brightness or contrast of the image.
         
             Params:
@@ -787,6 +787,10 @@ class MainWindow(QMainWindow):
             self.field.changeContrast(2)
         elif option == "contrast" and direction == "down":
             self.field.changeContrast(-2)
+        elif option == "channel":
+            for c in range(4):
+                if channel == c:
+                    self.field.changeChannel(c, direction)
     
     def changeMouseMode(self, new_mode):
         """Change the mouse mode of the field (pointer, panzoom, tracing...).

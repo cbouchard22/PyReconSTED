@@ -45,6 +45,7 @@ class Section():
         self.src = section_data["src"]
         self.brightness = section_data["brightness"]
         self.contrast = section_data["contrast"]
+        self.channel = section_data["channel"]
         self.mag = section_data["mag"]
         self.align_locked = section_data["align_locked"]
 
@@ -82,6 +83,7 @@ class Section():
         if abs(section_data["brightness"]) > 100:
             section_data["brightness"] = 0
         section_data["contrast"] = int(section_data["contrast"])
+        section_data["channel"] = int(section_data["channel"])
 
         # scan contours
         flagged_contours = []
@@ -125,6 +127,7 @@ class Section():
         d["src"] = self.src
         d["brightness"] = self.brightness
         d["contrast"] = self.contrast
+        d["channel"] = self.channel
         d["mag"] = self.mag
         d["align_locked"] = self.align_locked
 
@@ -155,6 +158,7 @@ class Section():
         section_data["src"] = ""  # image location
         section_data["brightness"] = 0
         section_data["contrast"] = 0
+        section_data["channel"] = 0
         section_data["mag"] = 0.00254  # microns per pixel
         section_data["align_locked"] = True
         section_data["thickness"] = 0.05  # section thickness

@@ -30,7 +30,8 @@ class SectionTableManager():
                 "align_locked": section.align_locked,
                 "calgrid": section.calgrid,
                 "brightness": section.brightness,
-                "contrast": section.contrast
+                "contrast": section.contrast,
+                "channel": section.channel
             }
 
         # add the data to the tables
@@ -113,10 +114,13 @@ class SectionTableManager():
                 section.brightness = b
             if c is not None:
                 section.contrast = c
+            if ch is not None:
+                section.channel = ch
             section.save()
             # update table data
             self.data[snum]["brightness"] = b
             self.data[snum]["contrast"] = c
+            self.data[snum]["channel"] = ch
         
         # update the field
         self.mainwindow.field.reload()
@@ -133,6 +137,7 @@ class SectionTableManager():
         """
         b = self.data[self.series.current_section]["brightness"]
         c = self.data[self.series.current_section]["contrast"]
+        ch = self.data[self.series.current_section]["channel"]
         self.setBC(section_numbers, b, c)
 
     def editThickness(self, section_numbers : list[int], thickness : float):

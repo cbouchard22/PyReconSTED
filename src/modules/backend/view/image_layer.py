@@ -23,6 +23,9 @@ from modules.datatypes import (
 )
 from modules.calc import fieldPointToPixmap
 
+import tifffile
+import numpy
+
 class ImageLayer():
 
     def __init__(self, section : Section, series : Series):
@@ -54,7 +57,34 @@ class ImageLayer():
         
         # if saved as normal images
         else:
-            self.image = QImage(src_path)
+            if src_path[-4:] != '.tif':
+                self.image = QImage(src_path)
+            else:
+                self.image_tif = tifffile.imread(src_path)
+                c, h, w = self.image_tif.shape
+                self.RGB_channel = numpy.zeros((h,w,4), dtype=numpy.uint32) 
+                self.RGB_channel[:,:,0] = 255+1
+
+                for channel in range(c):
+                    selected_channel = self.image_tif[channel % c]
+                    selected_channel = numpy.clip((selected_channel/selected_channel.max()*30),0,255).astype('uint32')
+                    """ Trying to make it RGB """
+                    self.RGB_channel[:,:,((channel % c) % 3)] += selected_channel
+
+                    # Multi-channel colors (yellow, cyan, magenta) if c>2 channels
+                    if (channel % c)>2: 
+                        self.RGB_channel[:,:,((channel % c - 1)%3)-1] += selected_channel
+
+                # The following line comes from : https://stackoverflow.com/questions/9794019/convert-numpy-array-to-pyside-qpixmap/9796921#9796921
+                # It removes the artefacts that were generated when converting to RGB (lines, weird resizing)
+                RGB_channel = (255 << 24 | self.RGB_channel[:,:,0] << 16 | self.RGB_channel[:,:,1] << 8 | self.RGB_channel[:,:,2]).flatten()
+
+                self.image = QImage(RGB_channel, w, h, QImage.Format_ARGB32) # Temporary
+
+                """ """
+
+                #self.image = QImage(self.image_tif[0], w, h, QImage.Format_RGB16)
+                
             if self.image.isNull():
                 self.image_found = False
             else:
@@ -130,6 +160,38 @@ class ImageLayer():
             self.section.contrast = 100
         elif self.section.contrast < -100:
             self.section.contrast = -100
+
+    def changeChannel(self, change : int, direction : str):
+        """Change the displayed channel.
+        
+            Params:
+                change (float): the channel to display or remove"""
+        c, h, w = self.image_tif.shape
+        self.section.channel = change
+        selected_channel = self.image_tif[self.section.channel % c]
+        # Converting to float32 to avoid diplay bugs when RGB - selected < 0
+        selected_channel = numpy.clip((selected_channel/selected_channel.max()*100),0,255).astype('float32')
+        self.RGB_channel = self.RGB_channel.astype('float32') 
+        """Temporary : build RGB image from selected channel"""
+        if direction == 'down':
+            self.RGB_channel[:,:,((self.section.channel % c) % 3) + 1] -= selected_channel
+        else:
+            self.RGB_channel[:,:,((self.section.channel % c) % 3) + 1] += selected_channel
+
+        # Multi-channel colors (yellow, cyan, magenta) if c>2 channels
+        if (self.section.channel % c)>2: 
+            if direction == 'down':
+                self.RGB_channel[:,:,((self.section.channel % c - 1)%3)] -= selected_channel
+            else:
+                self.RGB_channel[:,:,((self.section.channel % c - 1)%3)] += selected_channel
+
+        # The following line comes from : https://stackoverflow.com/questions/9794019/convert-numpy-array-to-pyside-qpixmap/9796921#9796921
+        # It removes the artefacts that were generated when converting to RGB (lines, weird resizing)
+        RGB_channel = numpy.clip(self.RGB_channel, 0, 255).astype('uint32')
+        RGB_channel_flatten = (255 << 24 | RGB_channel[:,:,1] << 16 | RGB_channel[:,:,2] << 8 | RGB_channel[:,:,3]).flatten()
+
+        self.image = QImage(RGB_channel_flatten, w, h, QImage.Format_ARGB32) # Temporary
+
     
     def _drawBrightness(self, image_layer):
         """Draw the brightness on the image field.
@@ -189,7 +251,7 @@ class ImageLayer():
                 pixmap_dim (tuple): the w and h of the main window
                 window (list): the x, y, w, and h of the field window
             Returns:
-                image_layer (QPixmap): the image laye
+                image_layer (QPixmap): the image layer
         """
         # save and unpack window and pixmap values
         self.pixmap_dim = pixmap_dim
@@ -289,6 +351,7 @@ class ImageLayer():
                 xmax-xmin,
                 ymax-ymin
             )
+
             im_crop = self.image.copy(crop_rect)
 
         # make the crop the size of the screen
